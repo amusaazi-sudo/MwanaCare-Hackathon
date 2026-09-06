@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}MwanaCare{% endblock %}
+{% block nav %}{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="welcome-card">
+        <h1 class="fw-bold">
+            WELCOME TO
+            <br>
+            MWANACARE
+        </h1>
+        <p class="lead mt-3 mb-4">Child immunization records, reminders, referrals, and aftercare guidance.</p>
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <a class="btn btn-primary px-4" href="{% url 'signup' %}">CREATE ACCOUNT</a>
+            <a class="btn btn-light px-4" href="{% url 'login' %}">LOGIN</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

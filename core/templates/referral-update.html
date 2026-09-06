@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Update Referral | MwanaCare{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1 class="h4">Update Referral</h1>
+    <p class="text-secondary">{{ referral.child.name }} at {{ referral.facility.name }}</p>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+        <button class="btn btn-primary" type="submit">Update record</button>
+        <a class="btn btn-outline-secondary" href="{% url 'referrals' %}">Cancel</a>
+    </form>
+</div>
+{% endblock %}

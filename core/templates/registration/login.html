@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Login | MwanaCare{% endblock %}
+{% block nav %}{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <h1>
+            <i class="fas fa-heartbeat brand-icon"></i>
+            MwanaCare
+        </h1>
+        <hr>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <button class="btn btn-primary w-100 mt-2" type="submit">LOGIN</button>
+        </form>
+        <p class="mt-3 mb-0 text-secondary">New caregiver? <a href="{% url 'signup' %}">Create an account</a></p>
+    </div>
+</div>
+{% endblock %}

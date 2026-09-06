@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ child.name }}'s Record | MwanaCare{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{% url 'records' %}" class="text-secondary text-decoration-none small">&larr; Back to children</a>
+        <h1 class="h3 mb-1 mt-1">Health Records</h1>
+        <p class="text-secondary mb-0">{{ child.name }}'s Comprehensive Record</p>
+    </div>
+    <div class="avatar-circle">{{ child.name|slice:":1"|upper }}</div>
+</div>
+
+<div class="panel mb-4">
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="avatar-circle">{{ child.name|slice:":1"|upper }}</div>
+        <div>
+            <h2 class="h5 mb-0">{{ child.name }}</h2>
+            <div class="text-secondary small">{{ child.age_display }} &middot; Born {{ child.date_of_birth }}</div>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col-6">
+            <div class="text-secondary small">Blood Type</div>
+            <div class="fw-bold">{{ child.get_blood_type_display|default:"Not on file" }}</div>
+        </div>
+        <div class="col-6">
+            <div class="text-secondary small">Allergies</div>
+            {% if child.allergy_list %}
+                <div class="allergy-text">{{ child.allergy_list|join:", " }}</div>
+            {% else %}
+                <div class="fw-bold">None known</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<h2 class="h5 mb-3">Growth Tracking</h2>
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="vital-card">
+            <div class="text-secondary small">Height</div>
+            <div class="value">{{ growth.height_cm|default:"--" }}{% if growth.height_cm %} cm{% endif %}</div>
+            {% if growth.height_percentile %}<span class="pill pill-completed">{{ growth.height_percentile }}TH PERCENTILE</span>{% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="vital-card">
+            <div class="text-secondary small">Weight</div>
+            <div class="value">{{ growth.weight_kg|default:"--" }}{% if growth.weight_kg %} kg{% endif %}</div>
+            {% if growth.weight_percentile %}<span class="pill pill-completed">{{ growth.weight_percentile }}TH PERCENTILE</span>{% endif %}
+        </div>
+    </div>
+    {% if not growth %}
+        <div class="col-12"><div class="empty-state">No growth measurements on file yet. Your health facility records these at each visit.</div></div>
+    {% endif %}
+</div>
+
+<h2 class="h5 mb-3">Vaccination Timeline</h2>
+<div class="panel">
+    {% for record in immunizations %}
+        <div class="d-flex justify-content-between align-items-start py-3 {% if not forloop.first %}border-top{% endif %}">
+            <div>
+                <div class="fw-semibold">{{ record.vaccine_name }}{% if record.dose_label %} &middot; {{ record.dose_label }}{% endif %}</div>
+                <div class="text-secondary small">
+                    {% if record.date_given %}Date: {{ record.date_given }}{% else %}Due: {{ record.next_due_date|default:"Not scheduled" }}{% endif %}
+                    {% if record.facility %} &middot; Clinic: {{ record.facility.name }}{% endif %}
+                </div>
+            </div>
+            <span class="pill pill-{{ record.status|slugify }}">{{ record.status|upper }}</span>
+        </div>
+    {% empty %}
+        <div class="empty-state">No vaccination records on file yet. Your health facility enters these after each visit.</div>
+    {% endfor %}
+</div>
+{% endblock %}

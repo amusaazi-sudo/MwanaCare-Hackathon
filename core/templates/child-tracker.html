@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Children | MwanaCare{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <h1 class="h3 mb-1">Children</h1>
+    <p class="text-secondary mb-0">These profiles are registered by your health facility. Contact them if any details need correcting.</p>
+</div>
+<div class="row g-3">
+    {% for child in children %}
+        <div class="col-md-6 col-xl-4">
+            <div class="panel h-100">
+                <h2 class="h5">{{ child.name }}</h2>
+                <p class="mb-1"><strong>Date of birth:</strong> {{ child.date_of_birth }}</p>
+                <p class="mb-0"><strong>Gender:</strong> {{ child.get_gender_display }}</p>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12"><div class="empty-state">No child profiles on file yet. Ask your health facility to register your child.</div></div>
+    {% endfor %}
+</div>
+{% endblock %}

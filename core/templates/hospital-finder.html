@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Hospital Search | MwanaCare{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <h1 class="h3 mb-1">Hospital Search</h1>
+    <p class="text-secondary mb-0">Find verified partner care nearby &mdash; no need to add a facility yourself.</p>
+</div>
+
+<div class="position-relative mb-3">
+    <span class="badge text-bg-light border position-absolute top-0 start-0 m-3" style="z-index:400;">
+        {{ facilities|length }} clinic{{ facilities|length|pluralize }} found
+    </span>
+    <div id="facility-map" class="facility-map"></div>
+</div>
+
+<form method="get" class="mb-3">
+    <input type="hidden" name="tag" value="{{ active_tag }}">
+    <div class="input-group">
+        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-secondary"></i></span>
+        {{ form.location }}
+    </div>
+</form>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="?location={{ query_location }}" class="chip {% if not active_tag %}active{% endif %}">Nearby</a>
+    {% for tag in filter_tags %}
+        <a href="?location={{ query_location }}&tag={{ tag }}" class="chip {% if active_tag == tag %}active{% endif %}">{{ tag }}</a>
+    {% endfor %}
+</div>
+
+<div class="row g-3">
+    {% for facility in facilities %}
+        <div class="col-md-6">
+            <div class="panel h-100 facility-card"
+                 {% if facility.latitude and facility.longitude %}data-lat="{{ facility.latitude }}" data-lng="{{ facility.longitude }}"{% endif %}>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="pill pill-completed">{{ facility.get_facility_type_display|upper }}</span>
+                    {% if facility.rating %}<span class="rating-star">&#9733; {{ facility.rating }}</span>{% endif %}
+                </div>
+                <h2 class="h5 mb-1">{{ facility.name }}</h2>
+                <div class="text-secondary small mb-2">
+                    <span class="distance-badge"></span>
+                    {{ facility.address }}{% if facility.location %}, {{ facility.location }}{% endif %}
+                </div>
+                {% if facility.service_list %}
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        {% for service in facility.service_list %}
+                            <span class="badge text-bg-light border">{{ service }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if facility.phone %}<div class="small text-secondary">{{ facility.phone }}</div>{% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12"><div class="empty-state">No matching facilities. Try a different search or filter.</div></div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+    var DEFAULT_CENTER = [0.3476, 32.5825]; // Kampala, Uganda -- used when no facility has coordinates
+    var mapEl = document.getElementById("facility-map");
+    var facilities = [];
+    document.querySelectorAll(".facility-card[data-lat]").forEach(function (card) {
+        facilities.push({
+            lat: parseFloat(card.dataset.lat),
+            lng: parseFloat(card.dataset.lng),
+            name: card.querySelector("h2").textContent,
+            address: card.querySelector(".text-secondary").textContent.trim(),
+            el: card,
+        });
+    });
+
+    var map = L.map(mapEl).setView(DEFAULT_CENTER, 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+        maxZoom: 19,
+    }).addTo(map);
+
+    if (facilities.length) {
+        var markers = facilities.map(function (f) {
+            return L.marker([f.lat, f.lng]).addTo(map).bindPopup("<strong>" + f.name + "</strong><br>" + f.address);
+        });
+        map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+    }
+
+    function haversineKm(lat1, lng1, lat2, lng2) {
+        var R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLng = (lng2 - lng1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    if (navigator.geolocation && facilities.length) {
+        navigator.geolocation.getCurrentPosition(function (pos) {
+            var here = [pos.coords.latitude, pos.coords.longitude];
+            facilities.forEach(function (f) {
+                var km = haversineKm(here[0], here[1], f.lat, f.lng);
+                f.km = km;
+                var badge = f.el.querySelector(".distance-badge");
+                badge.textContent = km.toFixed(1) + " km away · ";
+            });
+            var container = facilities[0].el.parentElement.parentElement;
+            facilities
+                .slice()
+                .sort(function (a, b) { return a.km - b.km; })
+                .forEach(function (f) { container.appendChild(f.el.parentElement); });
+        }, function () {
+            // Location denied/unavailable -- leave the server-provided order as-is.
+        });
+    }
+})();
+</script>
+{% endblock %}

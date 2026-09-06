@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | MwanaCare{% endblock %}
+{% block content %}
+<div class="dashboard-hero d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">
+            <i class="fas fa-notes-medical me-2"></i>
+            MwanaCare Dashboard
+        </h1>
+        <p class="text-secondary mb-0">Children, upcoming vaccinations, reminders, and recent referral visits.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="panel stat"><div class="text-secondary">Children</div><div class="fs-3 fw-bold">{{ children|length }}</div></div></div>
+    <div class="col-md-4"><div class="panel stat"><div class="text-secondary">Upcoming vaccines</div><div class="fs-3 fw-bold">{{ upcoming_records|length }}</div></div></div>
+    <div class="col-md-4"><div class="panel stat"><div class="text-secondary">Pending referrals</div><div class="fs-3 fw-bold">{{ pending_referrals }}</div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <h2 class="h5">Children</h2>
+            {% for child in children %}
+                <div class="d-flex justify-content-between border-top py-2">
+                    <span>{{ child.name }} <span class="text-secondary small">&middot; {{ child.age_display }}</span></span>
+                    <a href="{% url 'child_health_record' child.pk %}">View record</a>
+                </div>
+            {% empty %}
+                <div class="empty-state">No children registered yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <h2 class="h5">Upcoming Vaccinations</h2>
+            {% for record in upcoming_records %}
+                <div class="border-top py-2">
+                    <div class="fw-semibold">{{ record.child.name }} - {{ record.vaccine_name }}</div>
+                    <div class="text-secondary small">Due {{ record.next_due_date }}</div>
+                </div>
+            {% empty %}
+                <div class="empty-state">No upcoming vaccinations recorded.</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <h2 class="h5">Reminders</h2>
+            {% for reminder in reminders %}
+                <div class="border-top py-2">
+                    <div>{{ reminder.message }}</div>
+                    <div class="text-secondary small">{{ reminder.child.name }} - {{ reminder.due_date }}</div>
+                </div>
+            {% empty %}
+                <div class="empty-state">No active reminders.</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel h-100">
+            <h2 class="h5">Recent Visits</h2>
+            {% for visit in recent_visits %}
+                <div class="border-top py-2">
+                    <div class="fw-semibold">{{ visit.child.name }} at {{ visit.facility.name }}</div>
+                    <div class="text-secondary small">{{ visit.completed_at|default:visit.referral_date }}</div>
+                </div>
+            {% empty %}
+                <div class="empty-state">No completed visits yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
