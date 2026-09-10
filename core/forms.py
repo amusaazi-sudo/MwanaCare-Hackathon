@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import Child, Referral, ParentProfile
+from .models import Child, Note, Referral, ParentProfile
 
 
 def _widget_attrs(**extra):
@@ -85,6 +85,17 @@ class ReferralForm(forms.ModelForm):
             self.fields["child"].queryset = Child.objects.filter(parent=parent_profile)
         self.fields["child"].widget.attrs["class"] = "form-select"
         self.fields["facility"].widget.attrs["class"] = "form-select"
+
+
+class NoteForm(forms.ModelForm):
+    class Meta:
+        model = Note
+        fields = ["category", "content", "language"]
+        widgets = {
+            "category": forms.Select(attrs={"class": "form-select"}),
+            "content": forms.Textarea(attrs=_widget_attrs(rows=4, id="note-content")),
+            "language": forms.Select(attrs={"class": "form-select", "id": "note-language"}),
+        }
 
 
 class ReferralCompletionForm(forms.ModelForm):

@@ -157,6 +157,40 @@
         .chip.active { background: var(--mc-green); color: #fff; }
         .rating-star { color: #f5a623; font-weight: 700; }
         .facility-map { height: 320px; border-radius: 20px; overflow: hidden; box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2); }
+
+        /* Persistent reminder nudge -- reappears on every page until resolved */
+        .nag-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            background: #fff2cc;
+            color: #8a6d1a;
+            border: 1px solid #f0dca0;
+        }
+        .nag-banner.urgent {
+            background: #fbdcdc;
+            color: #a4302f;
+            border-color: #f2b8b8;
+            animation: nag-pulse 1.8s ease-in-out infinite;
+        }
+        .nag-banner .icon { font-size: 20px; }
+        .nag-banner a { color: inherit; font-weight: 700; text-decoration: underline; }
+        @keyframes nag-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(164, 48, 47, 0.25); }
+            50% { box-shadow: 0 0 0 6px rgba(164, 48, 47, 0); }
+        }
+
+        /* Mwana Notes category pills */
+        .pill-health { background: #e3f2fd; color: var(--mc-blue-deep); }
+        .pill-bill   { background: #fdf3d6; color: #8a6d1a; }
+        .pill-debt   { background: #fbdcdc; color: #a4302f; }
+
+        /* Voice input (MwanaAI + Mwana Notes) */
+        .mic-btn.recording { background: #a4302f; border-color: #a4302f; color: #fff; }
+        .mic-hint { font-size: 12px; color: #68756f; }
     </style>
 </head>
 <body>
@@ -176,7 +210,8 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'reminders' %}">Reminders</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'facility_finder' %}">Facilities</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'referrals' %}">Referrals</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'aftercare' %}">Aftercare AI</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'notes' %}">Mwana Notes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'mwanaai' %}">MwanaAI</a></li>
                 {% endif %}
             </ul>
             <div class="d-flex gap-2">
@@ -197,6 +232,7 @@
 {% endblock %}
 
 <main class="page-shell">
+    {% include "_reminder_banner.html" %}
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">

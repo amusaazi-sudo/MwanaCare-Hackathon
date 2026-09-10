@@ -7,13 +7,19 @@ from django.utils import timezone
 
 from .forms import (
     FacilitySearchForm,
+    NoteForm,
     ParentProfileForm,
     ReferralCompletionForm,
     ReferralForm,
     SignUpForm,
 )
-from .models import Child, Facility, ImmunizationRecord, ParentProfile, Referral, Reminder
-from .services import dispatch_whatsapp_message, post_immunization_answer, sync_due_reminders
+from .models import Child, Facility, ImmunizationRecord, LANGUAGE_CHOICES, Note, ParentProfile, Referral, Reminder
+from .services import (
+    dispatch_whatsapp_message,
+    forward_note_to_whatsapp,
+    post_immunization_answer,
+    sync_due_reminders,
+)
 
 
 def get_parent_profile(user):
@@ -221,10 +227,50 @@ def referral_update(request, pk):
 
 
 @login_required
-def aftercare(request):
+def mwanaai(request):
     answer = None
     question = ""
+    language = request.POST.get("language") or "en"
     if request.method == "POST":
         question = request.POST.get("question", "")
-        answer = post_immunization_answer(question)
-    return render(request, "aftercare.html", {"answer": answer, "question": question})
+        answer = post_immunization_answer(question, language)
+    return render(
+        request,
+        "mwanaai.html",
+        {
+            "answer": answer,
+            "question": question,
+            "language": language,
+            "language_choices": LANGUAGE_CHOICES,
+        },
+    )
+
+
+@login_required
+def notes(request):
+    profile_obj = get_parent_profile(request.user)
+    if request.method == "POST":
+        form = NoteForm(request.POST)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.parent = profile_obj
+            note.save()
+            messages.success(request, "Note saved.")
+            return redirect("notes")
+    else:
+        form = NoteForm()
+
+    note_list = Note.objects.filter(parent=profile_obj)
+    return render(request, "notes.html", {"form": form, "notes": note_list})
+
+
+@login_required
+def note_forward(request, pk):
+    profile_obj = get_parent_profile(request.user)
+    note = get_object_or_404(Note, pk=pk, parent=profile_obj)
+    if request.method == "POST":
+        result = forward_note_to_whatsapp(note)
+        note.forwarded_to_whatsapp = result.sent
+        note.save(update_fields=["forwarded_to_whatsapp"])
+        messages.success(request, result.detail)
+    return redirect("notes")

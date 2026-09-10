@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Child, Facility, GrowthMeasurement, ImmunizationRecord, ParentProfile, Referral, Reminder
+from .models import Child, Facility, GrowthMeasurement, ImmunizationRecord, Note, ParentProfile, Referral, Reminder
 
 
 class ChildInline(admin.TabularInline):
@@ -79,3 +79,13 @@ class ReminderAdmin(admin.ModelAdmin):
     list_display = ("child", "due_date", "sent")
     list_filter = ("sent",)
     search_fields = ("child__name", "message")
+
+
+@admin.register(Note)
+class NoteAdmin(admin.ModelAdmin):
+    """Read-only visibility for facility staff -- Mwana Notes are written by the
+    caregiver themselves, not entered here."""
+
+    list_display = ("parent", "category", "language", "created_at", "forwarded_to_whatsapp")
+    list_filter = ("category", "language", "forwarded_to_whatsapp")
+    search_fields = ("parent__phone_number", "parent__user__username", "content")

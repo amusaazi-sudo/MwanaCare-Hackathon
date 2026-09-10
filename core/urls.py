@@ -15,5 +15,7 @@ urlpatterns = [
     path("facilities/", views.facility_finder, name="facility_finder"),
     path("referrals/", views.referrals, name="referrals"),
     path("referrals/<int:pk>/update/", views.referral_update, name="referral_update"),
-    path("aftercare/", views.aftercare, name="aftercare"),
+    path("mwanaai/", views.mwanaai, name="mwanaai"),
+    path("notes/", views.notes, name="notes"),
+    path("notes/<int:pk>/forward/", views.note_forward, name="note_forward"),
 ]

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}MwanaAI | MwanaCare{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="panel">
+            <h1 class="h3"><i class="fas fa-robot me-2"></i>MwanaAI</h1>
+            <p class="text-secondary">Ask about post-immunization care and common child health concerns &mdash; type or speak, in English, Kiswahili, or Luganda.</p>
+            <form method="post">
+                {% csrf_token %}
+                <label class="form-label" for="language">Language</label>
+                <select class="form-select mb-3" id="language" name="language">
+                    {% for code, label in language_choices %}
+                        <option value="{{ code }}" {% if code == language %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+
+                <label class="form-label" for="question">Care question</label>
+                <div class="d-flex gap-2 align-items-start mb-1">
+                    <textarea class="form-control" id="question" name="question" rows="4" placeholder="Example: My child has a mild fever after vaccination.">{{ question }}</textarea>
+                    <button class="btn btn-outline-primary mic-btn" type="button" id="mic-btn" title="Speak your question">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+                <div class="mic-hint mb-3" id="mic-hint"></div>
+                <button class="btn btn-primary" type="submit">Ask MwanaAI</button>
+            </form>
+            {% if answer %}
+                <div class="alert alert-success mt-4 mb-0">
+                    <strong>Guidance:</strong> {{ answer }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var micBtn = document.getElementById("mic-btn");
+    var micHint = document.getElementById("mic-hint");
+    var languageSelect = document.getElementById("language");
+    var questionField = document.getElementById("question");
+
+    // Best-effort mapping to BCP-47 recognition locales. Browser/OS speech support
+    // for Luganda is inconsistent -- if recognition.start() fails for a given
+    // language, the mic button reports that instead of silently doing nothing.
+    var RECOGNITION_LANG = { en: "en-US", sw: "sw-KE", lg: "lg-UG" };
+
+    if (!SpeechRecognition) {
+        micBtn.style.display = "none";
+        micHint.textContent = "Voice input isn't supported in this browser -- try Chrome or Edge, or just type your question.";
+        return;
+    }
+
+    var recognition = new SpeechRecognition();
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    var listening = false;
+
+    recognition.addEventListener("result", function (event) {
+        var transcript = event.results[0][0].transcript;
+        questionField.value = transcript;
+    });
+
+    recognition.addEventListener("end", function () {
+        listening = false;
+        micBtn.classList.remove("recording");
+        micHint.textContent = "";
+    });
+
+    recognition.addEventListener("error", function (event) {
+        listening = false;
+        micBtn.classList.remove("recording");
+        micHint.textContent = "Couldn't hear that (" + event.error + "). Try again or type your question.";
+    });
+
+    micBtn.addEventListener("click", function () {
+        if (listening) {
+            recognition.stop();
+            return;
+        }
+        recognition.lang = RECOGNITION_LANG[languageSelect.value] || "en-US";
+        try {
+            recognition.start();
+            listening = true;
+            micBtn.classList.add("recording");
+            micHint.textContent = "Listening...";
+        } catch (err) {
+            micHint.textContent = "Voice input couldn't start. Try again or type your question.";
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -13,8 +13,8 @@
                 <div class="text-secondary small">Due {{ reminder.due_date }}</div>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="pill {% if reminder.sent %}pill-completed{% else %}pill-due-soon{% endif %}">
-                    {% if reminder.sent %}SENT{% else %}PENDING{% endif %}
+                <span class="pill {% if reminder.sent %}pill-completed{% elif reminder.urgency == 'overdue' %}pill-overdue{% else %}pill-due-soon{% endif %}">
+                    {% if reminder.sent %}SENT{% elif reminder.urgency == 'overdue' %}OVERDUE{% else %}DUE SOON{% endif %}
                 </span>
                 {% if not reminder.sent %}
                     <form method="post">

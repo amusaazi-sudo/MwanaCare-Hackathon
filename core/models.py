@@ -15,6 +15,14 @@ BLOOD_TYPE_CHOICES = [
     ("AB-", "AB Negative (AB-)"),
 ]
 
+# Shared by MwanaAI (post_immunization_answer) and Mwana Notes -- languages the
+# browser's speech-recognition/language picker offers in both features.
+LANGUAGE_CHOICES = [
+    ("en", "English"),
+    ("sw", "Kiswahili"),
+    ("lg", "Luganda"),
+]
+
 
 class ParentProfile(models.Model):
     # Created by partner facility staff (via the admin) before the caregiver ever
@@ -169,3 +177,39 @@ class Reminder(models.Model):
 
     def __str__(self):
         return f"Reminder for {self.child.name} on {self.due_date}"
+
+    @property
+    def urgency(self):
+        """Drives the nag banner + pill styling -- "overdue" outranks "due_soon"."""
+        return "overdue" if self.due_date < date.today() else "due_soon"
+
+    @property
+    def days_overdue(self):
+        delta = (date.today() - self.due_date).days
+        return delta if delta > 0 else 0
+
+
+class Note(models.Model):
+    """Mwana Notes: the one place a caregiver records their own data (health notes,
+    hospital bills paid, outstanding debts) rather than the facility entering it via
+    the admin -- see the README for why every other model here works the other way
+    around."""
+
+    CATEGORY_CHOICES = [
+        ("health", "Health note"),
+        ("bill", "Bill paid"),
+        ("debt", "Outstanding debt"),
+    ]
+
+    parent = models.ForeignKey(ParentProfile, on_delete=models.CASCADE)
+    category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, default="health")
+    content = models.TextField()
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, default="en")
+    created_at = models.DateTimeField(auto_now_add=True)
+    forwarded_to_whatsapp = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_category_display()} note for {self.parent} on {self.created_at:%Y-%m-%d}"

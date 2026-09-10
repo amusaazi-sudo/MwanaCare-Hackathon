@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Mwana Notes | MwanaCare{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <h1 class="h3 mb-1"><i class="fas fa-sticky-note me-2"></i>Mwana Notes</h1>
+    <p class="text-secondary mb-0">Write or speak a health note, a bill you've paid, or a debt you still owe &mdash; saved here and forwardable to your WhatsApp.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="panel">
+            <h2 class="h5">New note</h2>
+            <form method="post">
+                {% csrf_token %}
+                <label class="form-label" for="id_category">Category</label>
+                {{ form.category }}
+                <label class="form-label mt-3" for="id_language">Language</label>
+                {{ form.language }}
+                <label class="form-label mt-3" for="note-content">Note</label>
+                <div class="d-flex gap-2 align-items-start mb-1">
+                    {{ form.content }}
+                    <button class="btn btn-outline-primary mic-btn" type="button" id="mic-btn" title="Speak your note">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+                <div class="mic-hint mb-3" id="mic-hint"></div>
+                {{ form.content.errors }}
+                <button class="btn btn-primary" type="submit">Save note</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="panel">
+            <h2 class="h5">Your notes</h2>
+            {% for note in notes %}
+                <div class="d-flex justify-content-between align-items-start gap-3 py-3 {% if not forloop.first %}border-top{% endif %}">
+                    <div>
+                        <span class="pill pill-{{ note.category }}">{{ note.get_category_display|upper }}</span>
+                        <div class="mt-2">{{ note.content|linebreaksbr }}</div>
+                        <div class="text-secondary small mt-1">{{ note.created_at|date:"d M Y, H:i" }} &middot; {{ note.get_language_display }}</div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        {% if note.forwarded_to_whatsapp %}
+                            <span class="pill pill-completed">SENT</span>
+                        {% else %}
+                            <form method="post" action="{% url 'note_forward' note.pk %}">
+                                {% csrf_token %}
+                                <button class="btn btn-outline-primary btn-sm" type="submit">Send to WhatsApp</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="empty-state">No notes yet &mdash; add your first one on the left.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var micBtn = document.getElementById("mic-btn");
+    var micHint = document.getElementById("mic-hint");
+    var languageSelect = document.getElementById("id_language") || document.getElementById("note-language");
+    var contentField = document.getElementById("note-content");
+
+    // See mwanaai.html for the same pattern -- kept independent per-page rather than
+    // shared JS since each page owns its own field ids.
+    var RECOGNITION_LANG = { en: "en-US", sw: "sw-KE", lg: "lg-UG" };
+
+    if (!SpeechRecognition) {
+        micBtn.style.display = "none";
+        micHint.textContent = "Voice input isn't supported in this browser -- try Chrome or Edge, or just type your note.";
+        return;
+    }
+
+    var recognition = new SpeechRecognition();
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    var listening = false;
+
+    recognition.addEventListener("result", function (event) {
+        contentField.value = event.results[0][0].transcript;
+    });
+
+    recognition.addEventListener("end", function () {
+        listening = false;
+        micBtn.classList.remove("recording");
+        micHint.textContent = "";
+    });
+
+    recognition.addEventListener("error", function (event) {
+        listening = false;
+        micBtn.classList.remove("recording");
+        micHint.textContent = "Couldn't hear that (" + event.error + "). Try again or type your note.";
+    });
+
+    micBtn.addEventListener("click", function () {
+        if (listening) {
+            recognition.stop();
+            return;
+        }
+        recognition.lang = RECOGNITION_LANG[languageSelect.value] || "en-US";
+        try {
+            recognition.start();
+            listening = true;
+            micBtn.classList.add("recording");
+            micHint.textContent = "Listening...";
+        } catch (err) {
+            micHint.textContent = "Voice input couldn't start. Try again or type your note.";
+        }
+    });
+})();
+</script>
+{% endblock %}

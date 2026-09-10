@@ -1,0 +1,17 @@
+{% if nag_reminder %}
+<div class="nag-banner {% if nag_reminder.urgency == 'overdue' %}urgent{% endif %}">
+    <i class="fas {% if nag_reminder.urgency == 'overdue' %}fa-triangle-exclamation{% else %}fa-bell{% endif %} icon"></i>
+    <div class="flex-grow-1">
+        {% if nag_reminder.urgency == 'overdue' %}
+            <strong>{{ nag_reminder.days_overdue }} day{{ nag_reminder.days_overdue|pluralize }} overdue:</strong>
+        {% else %}
+            <strong>Coming up:</strong>
+        {% endif %}
+        {{ nag_reminder.message }}
+        {% if nag_reminder_extra_count %}
+            <span class="small">(+{{ nag_reminder_extra_count }} more reminder{{ nag_reminder_extra_count|pluralize }})</span>
+        {% endif %}
+    </div>
+    <a href="{% url 'reminders' %}">Review reminders</a>
+</div>
+{% endif %}
